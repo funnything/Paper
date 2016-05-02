@@ -17,6 +17,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,11 +36,18 @@ import static io.paperdb.Paper.TAG;
 
 public class DbStoragePlainFile implements Storage {
 
+    public interface StreamConverter {
+        OutputStream convertOutput(OutputStream stream);
+
+        InputStream convertInput(InputStream stream);
+    }
+
     private final Context mContext;
     private final String mDbName;
     private final HashMap<Class, Serializer> mCustomSerializers;
     private String mFilesDir;
     private boolean mPaperDirIsCreated;
+    private StreamConverter mStreamConverter;
 
     private Kryo getKryo() {
         return mKryo.get();
@@ -73,7 +82,7 @@ public class DbStoragePlainFile implements Storage {
 
         // UUID support
         kryo.register(UUID.class, new UUIDSerializer());
-        
+
         for (Class<?> clazz : mCustomSerializers.keySet())
             kryo.register(clazz, mCustomSerializers.get(clazz));
 
@@ -84,10 +93,11 @@ public class DbStoragePlainFile implements Storage {
     }
 
     public DbStoragePlainFile(Context context, String dbName,
-                              HashMap<Class, Serializer> serializers) {
+                              HashMap<Class, Serializer> serializers, StreamConverter streamConverter) {
         mContext = context;
         mDbName = dbName;
         mCustomSerializers = serializers;
+        mStreamConverter = streamConverter;
     }
 
     @Override
@@ -207,10 +217,12 @@ public class DbStoragePlainFile implements Storage {
                                     File originalFile, File backupFile) {
         try {
             FileOutputStream fileStream = new FileOutputStream(originalFile);
+            OutputStream stream = mStreamConverter.convertOutput(fileStream);
 
-            final Output kryoOutput = new Output(fileStream);
+            final Output kryoOutput = new Output(stream);
             getKryo().writeObject(kryoOutput, paperTable);
             kryoOutput.flush();
+            stream.flush();
             fileStream.flush();
             sync(fileStream);
             kryoOutput.close(); //also close file stream
@@ -233,7 +245,7 @@ public class DbStoragePlainFile implements Storage {
 
     private <E> E readTableFile(String key, File originalFile) {
         try {
-            final Input i = new Input(new FileInputStream(originalFile));
+            final Input i = new Input(mStreamConverter.convertInput(new FileInputStream(originalFile)));
             final Kryo kryo = getKryo();
             //noinspection unchecked
             final PaperTable<E> paperTable = kryo.readObject(i, PaperTable.class);
@@ -249,11 +261,11 @@ public class DbStoragePlainFile implements Storage {
             }
             String errorMessage = "Couldn't read/deserialize file "
                     + originalFile + " for table " + key;
-            if (e.getMessage().startsWith("Class cannot be created (missing no-arg constructor): ")){
+            if (e.getMessage().startsWith("Class cannot be created (missing no-arg constructor): ")) {
                 String className = e.getMessage()
                         .replace("Class cannot be created (missing no-arg constructor):", "");
                 errorMessage = "You have to add a public no-arg constructor for the class" + className
-                + "\n Read more: https://github.com/pilgr/Paper#save";
+                        + "\n Read more: https://github.com/pilgr/Paper#save";
             }
             throw new PaperDbException(errorMessage, e);
         }
