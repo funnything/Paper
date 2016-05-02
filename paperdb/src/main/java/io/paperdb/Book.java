@@ -7,14 +7,16 @@ import com.esotericsoftware.kryo.Serializer;
 import java.util.HashMap;
 import java.util.List;
 
+import io.paperdb.DbStoragePlainFile.KeyConverter;
 import io.paperdb.DbStoragePlainFile.StreamConverter;
 
 public class Book {
 
     private final Storage mStorage;
 
-    protected Book(Context context, String dbName, HashMap<Class, Serializer> serializers, StreamConverter streamConverter) {
-        mStorage = new DbStoragePlainFile(context.getApplicationContext(), dbName, serializers, streamConverter);
+    protected Book(Context context, String dbName, HashMap<Class, Serializer> serializers,
+                   StreamConverter streamConverter, KeyConverter keyConverter) {
+        mStorage = new DbStoragePlainFile(context.getApplicationContext(), dbName, serializers, streamConverter, keyConverter);
     }
 
     /**

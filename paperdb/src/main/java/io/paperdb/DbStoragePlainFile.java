@@ -42,12 +42,17 @@ public class DbStoragePlainFile implements Storage {
         InputStream convertInput(InputStream stream);
     }
 
+    public interface KeyConverter {
+        String convert(String key);
+    }
+
     private final Context mContext;
     private final String mDbName;
     private final HashMap<Class, Serializer> mCustomSerializers;
     private String mFilesDir;
     private boolean mPaperDirIsCreated;
     private StreamConverter mStreamConverter;
+    private KeyConverter mKeyConverter;
 
     private Kryo getKryo() {
         return mKryo.get();
@@ -93,11 +98,13 @@ public class DbStoragePlainFile implements Storage {
     }
 
     public DbStoragePlainFile(Context context, String dbName,
-                              HashMap<Class, Serializer> serializers, StreamConverter streamConverter) {
+                              HashMap<Class, Serializer> serializers,
+                              StreamConverter streamConverter, KeyConverter keyConverter) {
         mContext = context;
         mDbName = dbName;
         mCustomSerializers = serializers;
         mStreamConverter = streamConverter;
+        mKeyConverter = keyConverter;
     }
 
     @Override
@@ -199,7 +206,7 @@ public class DbStoragePlainFile implements Storage {
     }
 
     private File getOriginalFile(String key) {
-        final String tablePath = mFilesDir + File.separator + key + ".pt";
+        final String tablePath = mFilesDir + File.separator + mKeyConverter.convert(key + ".pt");
         return new File(tablePath);
     }
 
