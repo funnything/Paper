@@ -37,6 +37,8 @@ import static io.paperdb.Paper.TAG;
 public class DbStoragePlainFile implements Storage {
 
     public interface StreamConverter {
+        void prepareConversion();
+
         OutputStream convertOutput(OutputStream stream);
 
         InputStream convertInput(InputStream stream);
@@ -147,6 +149,7 @@ public class DbStoragePlainFile implements Storage {
     @Override
     public synchronized <E> E select(String key) {
         assertInit();
+        mStreamConverter.prepareConversion();
 
         final File originalFile = getOriginalFile(key);
         final File backupFile = makeBackupFile(originalFile);
