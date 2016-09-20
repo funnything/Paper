@@ -57,7 +57,7 @@ afterEvaluate {
 }
 
 dependencies {
-    compile 'com.esotericsoftware:kryo:3.0.2'
+    compile 'com.esotericsoftware:kryo:4.0.0'
     compile 'de.javakaffee:kryo-serializers:0.33'
 
     androidTestCompile 'com.orhanobut:hawk:1.14'
