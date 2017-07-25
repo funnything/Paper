@@ -70,8 +70,11 @@ public class Book {
      */
     public <T> T read(String key, T defaultValue) {
         T value = mStorage.select(key);
+        isDefaultValueUsed = value == null;
         return value == null ? defaultValue : value;
     }
+
+    public boolean isDefaultValueUsed = false;
 
     /**
      * Check if an object with the given key is saved in Book storage.
