@@ -123,6 +123,7 @@ public class DbStoragePlainFile implements Storage {
     @Override
     public synchronized <E> void insert(String key, E value) {
         assertInit();
+        mStreamConverter.prepareConversion();
 
         final PaperTable<E> paperTable = new PaperTable<>(value);
 
