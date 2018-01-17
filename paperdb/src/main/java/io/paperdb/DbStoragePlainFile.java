@@ -48,6 +48,10 @@ public class DbStoragePlainFile implements Storage {
         String convert(String key);
     }
 
+    public interface PaperLogger {
+        void sendLog(String eventId, Object... keyValueArray);
+    }
+
     private final Context mContext;
     private final String mDbName;
     private final HashMap<Class, Serializer> mCustomSerializers;
@@ -55,6 +59,8 @@ public class DbStoragePlainFile implements Storage {
     private boolean mPaperDirIsCreated;
     private StreamConverter mStreamConverter;
     private KeyConverter mKeyConverter;
+
+    private PaperLogger logger;
 
     private Kryo getKryo() {
         return mKryo.get();
@@ -101,12 +107,13 @@ public class DbStoragePlainFile implements Storage {
 
     public DbStoragePlainFile(Context context, String dbName,
                               HashMap<Class, Serializer> serializers,
-                              StreamConverter streamConverter, KeyConverter keyConverter) {
+                              StreamConverter streamConverter, KeyConverter keyConverter, PaperLogger logger) {
         mContext = context;
         mDbName = dbName;
         mCustomSerializers = serializers;
         mStreamConverter = streamConverter;
         mKeyConverter = keyConverter;
+        this.logger = logger;
     }
 
     @Override
@@ -162,6 +169,10 @@ public class DbStoragePlainFile implements Storage {
         }
 
         if (!exist(key)) {
+            logger.sendLog("stepCounting",
+                    "paper", "select",
+                    "return", "null",
+                    "cause", "not exists");
             return null;
         }
 
@@ -261,11 +272,19 @@ public class DbStoragePlainFile implements Storage {
             //noinspection unchecked
             final PaperTable<E> paperTable = kryo.readObject(i, PaperTable.class);
             i.close();
+            logger.sendLog("stepCounting",
+                    "paper", "select",
+                    "return", "mContent",
+                    "content", paperTable.mContent);
             return paperTable.mContent;
         } catch (FileNotFoundException | KryoException e) {
             // Clean up an unsuccessfully written file
             if (originalFile.exists()) {
                 if (!originalFile.delete()) {
+                    logger.sendLog("stepCounting",
+                            "paper", "select",
+                            "raise", "exception",
+                            "case", "original file exists");
                     throw new PaperDbException("Couldn't clean up broken/unserializable file "
                             + originalFile, e);
                 }
@@ -278,6 +297,10 @@ public class DbStoragePlainFile implements Storage {
                 errorMessage = "You have to add a public no-arg constructor for the class" + className
                         + "\n Read more: https://github.com/pilgr/Paper#save";
             }
+            logger.sendLog("stepCounting",
+                    "paper", "select",
+                    "raise", "exception",
+                    "case", "original file not exists");
             throw new PaperDbException(errorMessage, e);
         }
     }

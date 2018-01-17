@@ -34,6 +34,7 @@ public class Paper {
     // use globally for static helper method in this class
     private static StreamConverter mStreamConverter;
     private static KeyConverter mKeyConverter;
+    private static DbStoragePlainFile.PaperLogger logger;
 
     private static final ConcurrentHashMap<String, Book> mBookMap = new ConcurrentHashMap<>();
     private static final HashMap<Class, Serializer> mCustomSerializers = new HashMap<>();
@@ -45,10 +46,11 @@ public class Paper {
      *
      * @param context context, used to get application context
      */
-    public static void init(Context context, StreamConverter streamConverter, KeyConverter keyConverter) {
+    public static void init(Context context, StreamConverter streamConverter, KeyConverter keyConverter, DbStoragePlainFile.PaperLogger logger) {
         mContext = context.getApplicationContext();
         mStreamConverter = streamConverter;
         mKeyConverter = keyConverter;
+        Paper.logger = logger;
     }
 
     /**
@@ -79,7 +81,7 @@ public class Paper {
         synchronized (mBookMap) {
             Book book = mBookMap.get(name);
             if (book == null) {
-                book = new Book(mContext, name, mCustomSerializers, mStreamConverter, mKeyConverter);
+                book = new Book(mContext, name, mCustomSerializers, mStreamConverter, mKeyConverter, logger);
                 mBookMap.put(name, book);
             }
             return book;

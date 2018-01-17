@@ -15,8 +15,8 @@ public class Book {
     private final Storage mStorage;
 
     protected Book(Context context, String dbName, HashMap<Class, Serializer> serializers,
-                   StreamConverter streamConverter, KeyConverter keyConverter) {
-        mStorage = new DbStoragePlainFile(context.getApplicationContext(), dbName, serializers, streamConverter, keyConverter);
+                   StreamConverter streamConverter, KeyConverter keyConverter, DbStoragePlainFile.PaperLogger logger) {
+        mStorage = new DbStoragePlainFile(context.getApplicationContext(), dbName, serializers, streamConverter, keyConverter, logger);
     }
 
     /**
