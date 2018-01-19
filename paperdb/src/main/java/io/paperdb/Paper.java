@@ -128,7 +128,7 @@ public class Paper {
      * before destroy()
      */
     public static void clear(Context context) {
-        init(context, null, null);
+        init(context, null, null, null);
         book().destroy();
     }
 
