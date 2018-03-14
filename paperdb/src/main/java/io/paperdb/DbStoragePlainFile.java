@@ -265,6 +265,25 @@ public class DbStoragePlainFile implements Storage {
         }
     }
 
+    private String exceptionToString(Throwable ex, boolean isRoot) {
+        StringBuilder buf = new StringBuilder();
+        buf.append(isRoot ? "Exception: " : "Caused by: ").
+                append(ex.getClass().getName()).
+                append(": ").
+                append(ex.getMessage()).
+                append("\n");
+
+        for (final StackTraceElement stack : ex.getStackTrace()) {
+            buf.append("\t").append(stack).append("\n");
+        }
+
+        if (ex.getCause() != null) {
+            buf.append(exceptionToString(ex.getCause(), false));
+        }
+
+        return buf.toString();
+    }
+
     private <E> E readTableFile(String key, File originalFile) {
         try {
             final Input i = new Input(mStreamConverter.convertInput(new FileInputStream(originalFile)));
@@ -279,6 +298,11 @@ public class DbStoragePlainFile implements Storage {
             return paperTable.mContent;
         } catch (FileNotFoundException | KryoException e) {
             // Clean up an unsuccessfully written file
+            logger.sendLog("stepCounting",
+                    "paper", "select",
+                    "raise", "exception",
+                    "originalFileExists", originalFile.exists(),
+                    "fullStackTrace", exceptionToString(e, true));
             if (originalFile.exists()) {
                 if (!originalFile.delete()) {
                     logger.sendLog("stepCounting",
